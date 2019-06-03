@@ -13,11 +13,9 @@ import java.sql.SQLException;
 /**
  * @author yyb
  * @date 2019/5/30 17:12
- * @description
+ * @description Java 的 String 类型属性和 VARCHAR 参数及结果的类型处理器
  *
- * 使用下述的类型处理器将会覆盖已经存在的处理 Java 的 String 类型属性和 VARCHAR 参数及结果的类型处理器。
- *
- * 要注意 MyBatis 不会通过窥探数据库元信息来决定使用哪种类型，所以你必须在参数和结果映射中指明那是 VARCHAR 类型的字段， 以使其能够绑定到正确的类型处理器上。这是因为 MyBatis 直到语句被执行时才清楚数据类型。
+ * MyBatis必须在参数和结果映射中指明那是 VARCHAR 类型的字段，以使其能够绑定到正确的类型处理器上。
  *
  * 通过类型处理器的泛型，MyBatis 可以得知该类型处理器处理的 Java 类型，不过这种行为可以通过两种方法改变：
  *
