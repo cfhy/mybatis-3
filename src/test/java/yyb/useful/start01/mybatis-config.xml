@@ -16,6 +16,6 @@
         </environment>
     </environments>
     <mappers>
-        <mapper resource="yyb/start01/BlogMapper.xml"/>
+        <mapper resource="yyb/useful/start01/BlogMapper.xml"/>
     </mappers>
 </configuration>

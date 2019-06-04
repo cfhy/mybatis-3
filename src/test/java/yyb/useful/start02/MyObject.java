@@ -1,4 +1,4 @@
-package yyb.start02;
+package yyb.useful.start02;
 
 /**
  * @author yyb

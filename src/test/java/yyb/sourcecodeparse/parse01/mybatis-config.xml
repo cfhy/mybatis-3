@@ -15,13 +15,13 @@
         <typeAlias alias="Blog" type="yyb.model.Blog"/>
     </typeAliases>
     <typeHandlers>
-        <typeHandler handler="yyb.start02.ExampleTypeHandler"/>
+        <typeHandler handler="yyb.useful.start02.ExampleTypeHandler"/>
     </typeHandlers>
-    <objectFactory type="yyb.start02.ExampleObjectFactory">
+    <objectFactory type="yyb.useful.start02.ExampleObjectFactory">
         <property name="someProperty" value="100"/>
     </objectFactory>
     <plugins>
-        <plugin interceptor="yyb.start02.ExamplePlugin">
+        <plugin interceptor="yyb.useful.start02.ExamplePlugin">
             <property name="someProperty" value="100"/>
         </plugin>
     </plugins>
@@ -82,7 +82,7 @@
             </dataSource>
         </environment>
         <environment id="production">
-            <transactionManager type="yyb.start02.ExampleTransactionFactory"></transactionManager>
+            <transactionManager type="yyb.useful.start02.ExampleTransactionFactory"></transactionManager>
             <dataSource type="UNPOOLED">
                 <property name="driver" value="${driver}"/>
                 <property name="url" value="${url}"/>
@@ -92,6 +92,6 @@
         </environment>
     </environments>
     <mappers>
-        <mapper resource="yyb/start01/BlogMapper.xml"/>
+        <mapper resource="yyb/useful/start01/BlogMapper.xml"/>
     </mappers>
 </configuration>

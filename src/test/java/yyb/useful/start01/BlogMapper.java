@@ -1,4 +1,4 @@
-package yyb.start01;
+package yyb.useful.start01;
 
 
 import yyb.model.Blog;

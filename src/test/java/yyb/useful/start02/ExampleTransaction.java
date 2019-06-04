@@ -1,4 +1,4 @@
-package yyb.start02;
+package yyb.useful.start02;
 
 import org.apache.ibatis.transaction.Transaction;
 

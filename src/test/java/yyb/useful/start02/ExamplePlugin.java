@@ -1,4 +1,4 @@
-package yyb.start02;
+package yyb.useful.start02;
 
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.MappedStatement;

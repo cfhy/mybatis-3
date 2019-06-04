@@ -1,12 +1,10 @@
-package yyb.start02;
+package yyb.useful.start02;
 
 import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.junit.Test;
-import yyb.model.Blog;
-import yyb.start01.BlogMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,7 +17,7 @@ import java.io.InputStream;
 public class Start02Test {
     @Test
     public void test() throws IOException {
-        String resource = "yyb/start02/mybatis-config.xml";
+        String resource = "yyb/useful/start02/mybatis-config.xml";
         InputStream inputStream = Resources.getResourceAsStream(resource);
         SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
 //        为了指定创建哪种环境，只要将它作为可选的参数传递给 SqlSessionFactoryBuilder 即可。可以接受环境配置的两个方法签名是：

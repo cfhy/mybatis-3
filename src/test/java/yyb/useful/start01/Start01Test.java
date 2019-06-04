@@ -1,4 +1,4 @@
-package yyb.start01;
+package yyb.useful.start01;
 
 import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.session.SqlSession;
