@@ -18,12 +18,9 @@ public class Start02Test {
     @Test
     public void test() throws IOException {
         String resource = "yyb/useful/start02/mybatis-config.xml";
+        //MyBatis 包含一个名叫 Resources 的工具类，它包含一些实用方法，可使从 classpath 或其他位置加载资源文件更加容易。
         InputStream inputStream = Resources.getResourceAsStream(resource);
         SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
-//        为了指定创建哪种环境，只要将它作为可选的参数传递给 SqlSessionFactoryBuilder 即可。可以接受环境配置的两个方法签名是：
-//
-//        SqlSessionFactory factory = new SqlSessionFactoryBuilder().build(reader, environment);
-//        SqlSessionFactory factory = new SqlSessionFactoryBuilder().build(reader, environment, properties);
         SqlSession session = sqlSessionFactory.openSession();
 
     }

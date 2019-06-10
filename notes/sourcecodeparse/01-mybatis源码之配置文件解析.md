@@ -1,111 +1,84 @@
 ### mybatis 源码之配置文件解析
 
-#### 准备工作
-mybatis配置如下：
-```xml
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE configuration
-        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-config.dtd">
-<configuration>
-    <settings>
-        <setting name="logImpl" value="LOG4J"/>
-    </settings>
+#### 准备工作参考【test/yyb/useful/start02】
+由于本次只研究mybatis配置文件的加载过程，所以配置了一份最全的配置文件，但无法保证sql语句功能的正常运行。
 
-    <!--配置包的别名-->
-    <typeAliases>
-        <package name="com.yyb.model"/>
-    </typeAliases>
-
-    <!--配置数据库连接-->
-    <environments default="development">
-        <environment id="development">
-            <transactionManager type="JDBC">
-                <property name="" value=""/>
-            </transactionManager>
-            <dataSource type="UNPOOLED">
-                <property name="driver" value="com.mysql.cj.jdbc.Driver"/>
-                <property name="url" value="jdbc:mysql://localhost:3306/mybatis-demo?useSSL=false&amp;serverTimezone=Hongkong"/>
-                <property name="username" value="root"/>
-                <property name="password" value="123456"/>
-            </dataSource>
-        </environment>
-    </environments>
-
-    <!--mybatis映射配置文件路径-->
-    <mappers>
-        <mapper resource="mapper/CountryMapper.xml"/>
-        <!--
-         由于此处所有的xml映射文件都有对应的Mapper接口，mapper xml所在的目录和mapper接口也保持一致，
-         所以可以统一配置。如果接口和mapper文件不在同一个包下，就会抛出BindingException异常，需要向上面那样配置。
-         -->
-        <!--<package name="com.yyb.mapper"/>-->
-    </mappers>
-</configuration>
+####编写测试方法
 ```
-编写测试代码
-```java
-    @Test
-    public void insertTest() {
-        Reader reader = null;
-        SqlSession sqlSession = null;
-        try {
-            //通过Resources工具类将配置文件读入Reader
-            reader = Resources.getResourceAsReader("mybatis-config01.xml");
-            //解析配置文件，读取所有的mapper.xml进行具体的方法的解析，
-            //解析完成后，sqlSessionFactory就包含了所有的属性配置和执行sql的信息
-            sqlSessionFactory = new SqlSessionFactoryBuilder().build(reader);
-            sqlSession = sqlSessionFactory.openSession();
-            //方式1：不通过mapper方式
-            Country country = new Country(100L,"测试insert1","001");
-            int insert = sqlSession.insert("insert", country);
-            //方式2：使用mapper方式
-            CountryMapper mapper = sqlSession.getMapper(CountryMapper.class);
-            Country country1 = new Country(101L,"测试insert2","002");
-            int insert1 = mapper.insert(country);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if(sqlSession!=null) {
-                    sqlSession.close();
-                }
-                if(reader!=null) {
-                    reader.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-        }
+  @Test
+    public void test() throws IOException {
+        String resource = "yyb/useful/start02/mybatis-config.xml";
+        InputStream inputStream = Resources.getResourceAsStream(resource);
+        SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
+        SqlSession session = sqlSessionFactory.openSession();
     }
 ```
-首先会读取mybatis的配置文件，然后把读取的信息交给SqlSessionFactoryBuilder的build方法，用于创建SqlSessionFactory对象，
-接下来跟踪build方法，发现最终调用的是如下build方法：
-```java
-  public SqlSessionFactory build(Reader reader, String environment, Properties properties) {
-    try {
-        // 创建XMLConfigBuilder对象
-      XMLConfigBuilder parser = new XMLConfigBuilder(reader, environment, properties);
-      //调用XMLConfigBuilder对象的parse方法把配置文件解析到Configuration对象中
-      return build(parser.parse());
-    } catch (Exception e) {
-      throw ExceptionFactory.wrapException("Error building SqlSession.", e);
-    } finally {
-      ErrorContext.instance().reset();
-      try {
-        reader.close();
-      } catch (IOException e) {
-        // Intentionally ignore. Prefer previous error.
+#### 读取配置文件
+MyBatis 包含一个名叫 Resources 的工具类，它包含一些实用方法，可使从 classpath 或其他位置加载资源文件更加容易。
+```
+InputStream inputStream = Resources.getResourceAsStream(resource);
+```
+层层深入后，最终来到【ClassLoaderWrapper.java】,其最终的实现代码为：
+```
+InputStream getResourceAsStream(String resource, ClassLoader[] classLoader) {
+    for (ClassLoader cl : classLoader) {
+      if (null != cl) {
+
+        // try to find the resource as passed
+        InputStream returnValue = cl.getResourceAsStream(resource);
+
+        // now, some class loaders want this leading "/", so we'll add it and try again if we didn't find the resource
+        if (null == returnValue) {
+          returnValue = cl.getResourceAsStream("/" + resource);
+        }
+
+        if (null != returnValue) {
+          return returnValue;
+        }
       }
     }
-  }
-  
-  //该方法为上面的 return build(parser.parse());方法，很简单，就是通过配置信息创建一个SqlSessionFactory对象
-  public SqlSessionFactory build(Configuration config) {
-    return new DefaultSqlSessionFactory(config);
+    return null;
   }
 ```
+可以看到，最终仍然调用的是classLoader的getResourceAsStream方法。
+#### 解析配置文件
+读取mybatis的配置文件后，会把读取的流交给SqlSessionFactoryBuilder的build方法，SqlSessionFactoryBuilder类的职责就是创建SqlSessionFactory对象，里面全是build方法重载，所以创建SqlSessionFactory的方式有很多种，接下来跟踪build方法，发现最终调用的是如下build方法：
+```
+    public SqlSessionFactory build(InputStream inputStream, String environment, Properties properties) {
+      try {
+        XMLConfigBuilder parser = new XMLConfigBuilder(inputStream, environment, properties);
+        return build(parser.parse());
+      } catch (Exception e) {
+        throw ExceptionFactory.wrapException("Error building SqlSession.", e);
+      } finally {
+        ErrorContext.instance().reset();
+        try {
+          inputStream.close();
+        } catch (IOException e) {
+          // Intentionally ignore. Prefer previous error.
+        }
+      }
+    }
+```
+可以发现，该类并没干实事，而是把解析xml的工作转交给了XMLConfigBuilder，下面来看看XMLConfigBuilder的构造方法：
+```
+  public XMLConfigBuilder(InputStream inputStream, String environment, Properties props) {
+    this(new XPathParser(inputStream, true, props, new XMLMapperEntityResolver()), environment, props);
+  }
+  
+  private XMLConfigBuilder(XPathParser parser, String environment, Properties props) {
+    super(new Configuration());
+    ErrorContext.instance().resource("SQL Mapper Configuration");
+    this.configuration.setVariables(props);
+    this.parsed = false;
+    this.environment = environment;
+    this.parser = parser;
+  }
+```
+可以看到，在创建XMLConfigBuilder对象的时候，又创建了XPathParser对象，然后调用了下面的那个构造方法，我们看看创建XPathParser又做了什么
+
+
+
 接下来，跟踪一下XMLConfigBuilder类的构造函数,看看是如何创建了该类的实例：
 ```java
     //一上来就初始化了Configuration对象（该对象在XMLConfigBuilder的父类BaseBuilder中）
