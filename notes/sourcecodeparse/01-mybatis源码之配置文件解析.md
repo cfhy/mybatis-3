@@ -1,9 +1,9 @@
-### mybatis 源码之配置文件解析
+## mybatis 源码之配置文件解析
 
-#### 准备工作参考【test/yyb/useful/start02】
+### 准备工作参考【test/yyb/useful/start02】
 由于本次只研究mybatis配置文件的加载过程，所以配置了一份最全的配置文件，但无法保证sql语句功能的正常运行。
 
-#### 编写测试方法
+### 编写测试方法
 ```
   @Test
     public void test() throws IOException {
@@ -13,7 +13,7 @@
         SqlSession session = sqlSessionFactory.openSession();
     }
 ```
-#### 读取配置文件
+### 读取配置文件
 MyBatis 包含一个名叫 Resources 的工具类，它包含一些实用方法，可使从 classpath 或其他位置加载资源文件更加容易。
 ```
 InputStream inputStream = Resources.getResourceAsStream(resource);
@@ -41,7 +41,7 @@ InputStream getResourceAsStream(String resource, ClassLoader[] classLoader) {
   }
 ```
 可以看到，最终仍然调用的是classLoader的getResourceAsStream方法。
-#### 解析配置文件
+### 解析配置文件
 读取mybatis的配置文件后，会把读取的流交给SqlSessionFactoryBuilder的build方法，SqlSessionFactoryBuilder类的职责就是创建SqlSessionFactory对象，里面全是build方法重载，所以创建SqlSessionFactory的方式有很多种，接下来跟踪build方法，发现最终调用的是如下build方法：
 ```
     public SqlSessionFactory build(InputStream inputStream, String environment, Properties properties) {
