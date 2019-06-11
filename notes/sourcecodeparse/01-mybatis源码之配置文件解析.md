@@ -3,7 +3,7 @@
 #### 准备工作参考【test/yyb/useful/start02】
 由于本次只研究mybatis配置文件的加载过程，所以配置了一份最全的配置文件，但无法保证sql语句功能的正常运行。
 
-####编写测试方法
+#### 编写测试方法
 ```
   @Test
     public void test() throws IOException {
