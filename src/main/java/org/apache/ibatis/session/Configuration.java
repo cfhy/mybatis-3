@@ -183,20 +183,29 @@ public class Configuration {
 
     protected final LanguageDriverRegistry languageRegistry = new LanguageDriverRegistry();
 
+    //存储xml映射文件中<select>、<insert>、<delete>、<update>标签的解析出来的内容
     protected final Map<String, MappedStatement> mappedStatements = new StrictMap<MappedStatement>("Mapped Statements collection")
             .conflictMessageProducer((savedValue, targetValue) ->
                     ". please check " + savedValue.getResource() + " and " + targetValue.getResource());
+    //存储xml映射文件中<cache>标签的解析出来的内容
     protected final Map<String, Cache> caches = new StrictMap<>("Caches collection");
+    //存储xml映射文件中<ResultMap>标签的解析出来的内容
     protected final Map<String, ResultMap> resultMaps = new StrictMap<>("Result Maps collection");
+    //存储xml映射文件中<ParameterMap>标签的解析出来的内容
     protected final Map<String, ParameterMap> parameterMaps = new StrictMap<>("Parameter Maps collection");
+    //存储xml映射文件中<selectkey>标签的解析出来的内容
     protected final Map<String, KeyGenerator> keyGenerators = new StrictMap<>("Key Generators collection");
 
     protected final Set<String> loadedResources = new HashSet<>();
+    //存储xml映射文件中<sql>标签的解析出来的内容
     protected final Map<String, XNode> sqlFragments = new StrictMap<>("XML fragments parsed from previous mappers");
-
+    //未解析处理的statements
     protected final Collection<XMLStatementBuilder> incompleteStatements = new LinkedList<>();
+    //未解析处理的CacheRefs
     protected final Collection<CacheRefResolver> incompleteCacheRefs = new LinkedList<>();
+    //未解析处理的ResultMaps
     protected final Collection<ResultMapResolver> incompleteResultMaps = new LinkedList<>();
+    //未解析处理的Methods
     protected final Collection<MethodResolver> incompleteMethods = new LinkedList<>();
 
     /*
@@ -212,24 +221,42 @@ public class Configuration {
     }
 
     public Configuration() {
+        //使用JDBC的事务管理机制：即利用java.sql.Connection对象完成对事务的提交（commit()）、回滚（rollback()）、关闭（close()）等
         typeAliasRegistry.registerAlias("JDBC", JdbcTransactionFactory.class);
+        //使用MANAGED的事务管理机制：这种机制MyBatis自身不会去实现事务管理，而是让程序的容器如（JBOSS，Weblogic）来实现对事务的管理
         typeAliasRegistry.registerAlias("MANAGED", ManagedTransactionFactory.class);
 
+        //mybatis会从在应用服务器向配置好的JNDI数据源DataSource获取数据库连接。
         typeAliasRegistry.registerAlias("JNDI", JndiDataSourceFactory.class);
+        //mybatis会创建一个数据库连接池，连接池的一个连接将会被用作数据库操作。一旦数据库操作完成,mybatis会将此连接返回给连接池。
         typeAliasRegistry.registerAlias("POOLED", PooledDataSourceFactory.class);
+        //mybatis会为每一个数据库操作创建一个新的连接，并关闭它。该方式适用于只有小规模数量并发用户的简单应用程序上。
         typeAliasRegistry.registerAlias("UNPOOLED", UnpooledDataSourceFactory.class);
 
+        //以下为缓存策略，在mapper配置文件中使用，eviction是缓存的淘汰算法，可选值有"LRU"、"FIFO"、"SOFT"、"WEAK"，缺省值是LRU
+        //PERPETUAL为默认的缓存方式，可以自定义成其他的
         typeAliasRegistry.registerAlias("PERPETUAL", PerpetualCache.class);
+        //FIFO：先进先出，按对象进入缓存的顺序来移除
         typeAliasRegistry.registerAlias("FIFO", FifoCache.class);
+        //LRU：最近最少使用，移除最长时间不被使用的对象，默认策略
         typeAliasRegistry.registerAlias("LRU", LruCache.class);
+        //SOFT：软引用，移除基于垃圾回收器状态和软引用规则的对象
         typeAliasRegistry.registerAlias("SOFT", SoftCache.class);
+        //WEAK：弱引用，更积极地移除基于垃圾收集器状态和弱引用规则的对象
         typeAliasRegistry.registerAlias("WEAK", WeakCache.class);
 
+        //MyBatis 可以根据不同的数据库厂商执行不同的语句，这种多厂商的支持是基于映射语句中的 databaseId 属性。
+        // MyBatis 会加载不带 databaseId 属性和带有匹配当前数据库 databaseId 属性的所有语句。
+        // 如果同时找到带有 databaseId 和不带 databaseId 的相同语句，则后者会被舍弃。
+        // 为支持多厂商特性只要在 mybatis-config.xml 文件中加入 databaseIdProvider 即可
         typeAliasRegistry.registerAlias("DB_VENDOR", VendorDatabaseIdProvider.class);
 
+        //XMLLanguageDriver:用于创建动态、静态SqlSource。
         typeAliasRegistry.registerAlias("XML", XMLLanguageDriver.class);
+        //RawLanguageDriver:在确保只有静态sql时，可以使用，不得含有任何动态sql的内容
         typeAliasRegistry.registerAlias("RAW", RawLanguageDriver.class);
 
+        //日志
         typeAliasRegistry.registerAlias("SLF4J", Slf4jImpl.class);
         typeAliasRegistry.registerAlias("COMMONS_LOGGING", JakartaCommonsLoggingImpl.class);
         typeAliasRegistry.registerAlias("LOG4J", Log4jImpl.class);
@@ -238,10 +265,13 @@ public class Configuration {
         typeAliasRegistry.registerAlias("STDOUT_LOGGING", StdOutImpl.class);
         typeAliasRegistry.registerAlias("NO_LOGGING", NoLoggingImpl.class);
 
+        //动态代理的方式
         typeAliasRegistry.registerAlias("CGLIB", CglibProxyFactory.class);
         typeAliasRegistry.registerAlias("JAVASSIST", JavassistProxyFactory.class);
 
+        ///把XMLLanguageDriver加到languageRegistry对象的map字段里，并设置languageRegistry对象的defaultDriverClass字段为XMLLanguageDriver
         languageRegistry.setDefaultDriverClass(XMLLanguageDriver.class);
+        //把RawLanguageDriver加到languageRegistry对象的map字段里
         languageRegistry.register(RawLanguageDriver.class);
     }
 
@@ -919,6 +949,11 @@ public class Configuration {
         }
     }
 
+    /**
+     * 自定义了一个Map，用于存储String类型的key
+     * 该map新增了name和conflictMessageProducer字段，重写了get和put方法
+     * @param <V>
+     */
     protected static class StrictMap<V> extends HashMap<String, V> {
 
         private static final long serialVersionUID = -4950446264854982944L;
@@ -958,6 +993,13 @@ public class Configuration {
             return this;
         }
 
+        /**
+         * 存放的时候先判断，如果key已存在，报错
+         * 如果key包含.，说明是类的全路径，则获取类名称作为key，如果类名称不存在，则添加，否则把类名称包装一下再添加
+         * @param key
+         * @param value
+         * @return
+         */
         @SuppressWarnings("unchecked")
         public V put(String key, V value) {
             if (containsKey(key)) {
@@ -975,6 +1017,11 @@ public class Configuration {
             return super.put(key, value);
         }
 
+        /**
+         * 根据key获取值，如果值不存在，则报错，如果值是包装过的key，也报错。
+         * @param key
+         * @return
+         */
         public V get(Object key) {
             V value = super.get(key);
             if (value == null) {

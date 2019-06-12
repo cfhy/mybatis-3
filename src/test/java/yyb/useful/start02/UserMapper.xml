@@ -10,7 +10,6 @@
         <result column="funkyNumber" property="funkyNumber"/>
         <result column="roundingMode" property="roundingMode"/>
     </resultMap>
-
     <select id="getUser" resultMap="usermap">
 		select * from users
 	</select>
