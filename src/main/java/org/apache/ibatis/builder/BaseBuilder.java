@@ -30,6 +30,14 @@ import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
  * @author Clinton Begin
+ *
+ * BaseBuilder 持有 Configuration，TypeAliasRegistry，TypeHandlerRegistry三大对象
+ *
+ * 提供了一些工具类方法：
+ * 1、将字符串转换成对应的数据类型
+ * 2、解析类
+ * 3、根据别名获取对应的枚举类型
+ * 4、解析TypeHandler
  */
 public abstract class BaseBuilder {
   protected final Configuration configuration;

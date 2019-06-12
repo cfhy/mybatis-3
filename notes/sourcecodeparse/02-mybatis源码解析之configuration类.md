@@ -1,109 +1,105 @@
-### mybatis 配置文件加载
-Configuration 配置如下：
-```xml
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE configuration
-        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-config.dtd">
-<configuration>
-    <!--指定使用log4j输出日志-->
-    <settings>
-        <setting name="logImpl" value="LOG4J"/>
-    </settings>
-
-    <!--配置包的别名-->
-    <typeAliases>
-        <package name="com.yyb.model"/>
-    </typeAliases>
-
-    <!--配置数据库连接-->
-    <environments default="development">
-        <environment id="development">
-            <transactionManager type="JDBC">
-                <property name="" value=""/>
-            </transactionManager>
-            <dataSource type="UNPOOLED">
-                <property name="driver" value="com.mysql.cj.jdbc.Driver"/>
-                <property name="url" value="jdbc:mysql://localhost:3306/mybatis-demo?useSSL=false&amp;serverTimezone=Hongkong"/>
-                <property name="username" value="root"/>
-                <property name="password" value="123456"/>
-            </dataSource>
-        </environment>
-    </environments>
-
-    <!--mybatis映射配置文件路径-->
-    <mappers>
-        <mapper resource="mapper/CountryMapper.xml"/>
-        <!--
-         由于此处所有的xml映射文件都有对应的Mapper接口，mapper xml所在的目录和mapper接口也保持一致，
-         所以可以统一配置。如果接口和mapper文件不在同一个包下，就会抛出BindingException异常，需要向上面那样配置。
-         -->
-        <!--<package name="com.yyb.mapper"/>-->
-    </mappers>
-</configuration>
-```
-编写测试代码
+### Configuration类
+Configuration类代码量很庞大，分析的时候对照mybatis-config.xml就比较清晰了，由于字段中用到了Configuration的内部类，所以先看看该类的实现：
 ```java
-    @Test
-    public void insertTest() {
-        Reader reader = null;
-        SqlSession sqlSession = null;
-        try {
-            //通过Resources工具类将配置文件读入Reader
-            reader = Resources.getResourceAsReader("mybatis-config01.xml");
-            //解析配置文件，读取所有的mapper.xml进行具体的方法的解析，
-            //解析完成后，sqlSessionFactory就包含了所有的属性配置和执行sql的信息
-            sqlSessionFactory = new SqlSessionFactoryBuilder().build(reader);
-            sqlSession = sqlSessionFactory.openSession();
-            //方式1：不通过mapper方式
-            Country country = new Country(100L,"测试insert1","001");
-            int insert = sqlSession.insert("insert", country);
-            //方式2：使用mapper方式
-            CountryMapper mapper = sqlSession.getMapper(CountryMapper.class);
-            Country country1 = new Country(101L,"测试insert2","002");
-            int insert1 = mapper.insert(country);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if(sqlSession!=null) {
-                    sqlSession.close();
+protected static class StrictMap<V> extends HashMap<String, V> {
+
+        private static final long serialVersionUID = -4950446264854982944L;
+        private final String name;
+        private BiFunction<V, V, String> conflictMessageProducer;
+
+        public StrictMap(String name, int initialCapacity, float loadFactor) {
+            super(initialCapacity, loadFactor);
+            this.name = name;
+        }
+
+        public StrictMap(String name, int initialCapacity) {
+            super(initialCapacity);
+            this.name = name;
+        }
+
+        public StrictMap(String name) {
+            super();
+            this.name = name;
+        }
+
+        public StrictMap(String name, Map<String, ? extends V> m) {
+            super(m);
+            this.name = name;
+        }
+
+        /**
+         * Assign a function for producing a conflict error message when contains value with the same key.
+         * <p>
+         * function arguments are 1st is saved value and 2nd is target value.
+         * @param conflictMessageProducer A function for producing a conflict error message
+         * @return a conflict error message
+         * @since 3.5.0
+         */
+        public StrictMap<V> conflictMessageProducer(BiFunction<V, V, String> conflictMessageProducer) {
+            this.conflictMessageProducer = conflictMessageProducer;
+            return this;
+        }
+
+        @SuppressWarnings("unchecked")
+        public V put(String key, V value) {
+            if (containsKey(key)) {
+                throw new IllegalArgumentException(name + " already contains value for " + key
+                        + (conflictMessageProducer == null ? "" : conflictMessageProducer.apply(super.get(key), value)));
+            }
+            if (key.contains(".")) {
+                final String shortKey = getShortName(key);
+                if (super.get(shortKey) == null) {
+                    super.put(shortKey, value);
+                } else {
+                    super.put(shortKey, (V) new Ambiguity(shortKey));
                 }
-                if(reader!=null) {
-                    reader.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
+            }
+            return super.put(key, value);
+        }
+
+        public V get(Object key) {
+            V value = super.get(key);
+            if (value == null) {
+                throw new IllegalArgumentException(name + " does not contain value for " + key);
+            }
+            if (value instanceof Ambiguity) {
+                throw new IllegalArgumentException(((Ambiguity) value).getSubject() + " is ambiguous in " + name
+                        + " (try using the full name including the namespace, or rename one of the entries)");
+            }
+            return value;
+        }
+
+        protected static class Ambiguity {
+            final private String subject;
+
+            public Ambiguity(String subject) {
+                this.subject = subject;
             }
 
+            public String getSubject() {
+                return subject;
+            }
+        }
+
+        private String getShortName(String key) {
+            final String[] keyParts = key.split("\\.");
+            return keyParts[keyParts.length - 1];
         }
     }
 ```
-首先会读取mybatis的配置文件，然后把读取的信息交给SqlSessionFactoryBuilder的build方法，用于创建SqlSessionFactory对象，
-接下来跟踪build方法，发现最终调用的是如下build方法：
+
+
+
+
+
+
+
+
+
+
+首先看看该类的字段：
 ```java
-  public SqlSessionFactory build(Reader reader, String environment, Properties properties) {
-    try {
-        // 创建XMLConfigBuilder对象
-      XMLConfigBuilder parser = new XMLConfigBuilder(reader, environment, properties);
-      //调用XMLConfigBuilder对象的parse方法把配置文件解析到Configuration对象中
-      return build(parser.parse());
-    } catch (Exception e) {
-      throw ExceptionFactory.wrapException("Error building SqlSession.", e);
-    } finally {
-      ErrorContext.instance().reset();
-      try {
-        reader.close();
-      } catch (IOException e) {
-        // Intentionally ignore. Prefer previous error.
-      }
-    }
-  }
   
-  //该方法为上面的 return build(parser.parse());方法，很简单，就是通过配置信息创建一个SqlSessionFactory对象
-  public SqlSessionFactory build(Configuration config) {
-    return new DefaultSqlSessionFactory(config);
-  }
 ```
 接下来，跟踪一下XMLConfigBuilder类的构造函数,看看是如何创建了该类的实例：
 ```java
