@@ -158,7 +158,7 @@ Configuration类代码量很庞大，分析的时候对照mybatis-config.xml就�
     //指定发现自动映射目标未知列（或者未知属性类型）的行为。
     protected AutoMappingUnknownColumnBehavior autoMappingUnknownColumnBehavior = AutoMappingUnknownColumnBehavior.NONE;
 
-    //对应<properties/>节点
+    //对应<properties/>节点，存储Properties
     protected Properties variables = new Properties();
 
     protected ReflectorFactory reflectorFactory = new DefaultReflectorFactory();

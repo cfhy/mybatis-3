@@ -278,6 +278,5 @@ public abstract class BaseBuilder {
     }
 }
 ```
-看到这里，感觉BaseBuilder存在的意义不大，里面持有的字段Configuration都有，除了提供了几个公用方法之外，也许是为了更方便操作吧。
 
-总结：本片介绍了如何读取配置文件到内存中。通过源码跟踪走到了XMLConfigBuilder的创建，然而该类的创建又牵扯了许多其他的类，比如XPathParser，该类主要用于解析XML。还有创建了Configuration对象的时候，调研父类(BaseBuilder)的构造，所以我们又分析了该类。该类主要是持有 Configuration，TypeAliasRegistry，TypeHandlerRegistry三大对象，以及一些公用的方法。下一篇分析一下Configuration类。
+总结：本文介绍了如何读取配置文件到内存中。通过源码跟踪走到了XMLConfigBuilder的创建，然而该类的创建又牵扯了许多其他的类，比如XPathParser，该类主要用于解析XML。还有创建了Configuration对象的时候，调研父类(BaseBuilder)的构造，所以我们又分析了该类。该类主要是持有 Configuration，TypeAliasRegistry，TypeHandlerRegistry三大对象，以及一些公用的方法。下一篇分析一下Configuration类。

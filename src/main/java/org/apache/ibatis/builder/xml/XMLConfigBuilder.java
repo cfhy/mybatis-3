@@ -122,12 +122,19 @@ public class XMLConfigBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 获取settings下的所有子节点
+   * @param context
+   * @return
+   */
   private Properties settingsAsProperties(XNode context) {
     if (context == null) {
       return new Properties();
     }
+    //拿到settings节点下配置的所有属性
     Properties props = context.getChildrenAsProperties();
     // Check that all settings are known to the configuration class
+    //检查这些settings在configuration类中是否有对应的set方法，如果没有，说明是乱配置的，直接报错
     MetaClass metaConfig = MetaClass.forClass(Configuration.class, localReflectorFactory);
     for (Object key : props.keySet()) {
       if (!metaConfig.hasSetter(String.valueOf(key))) {
@@ -137,6 +144,11 @@ public class XMLConfigBuilder extends BaseBuilder {
     return props;
   }
 
+  /**
+   * 加载自定义的Vfs
+   * @param props
+   * @throws ClassNotFoundException
+   */
   private void loadCustomVfs(Properties props) throws ClassNotFoundException {
     String value = props.getProperty("vfsImpl");
     if (value != null) {
@@ -218,23 +230,36 @@ public class XMLConfigBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 解析properties节点
+   * @param context
+   * @throws Exception
+   */
   private void propertiesElement(XNode context) throws Exception {
     if (context != null) {
+      //获取子节点的所有Properties，此处我们的配置为username和password
       Properties defaults = context.getChildrenAsProperties();
+      //获取resource属性的值，此处为prop.properties
       String resource = context.getStringAttribute("resource");
+      //获取url属性的值
       String url = context.getStringAttribute("url");
+      //如果resource和url都有值，则报错
       if (resource != null && url != null) {
         throw new BuilderException("The properties element cannot specify both a URL and a resource based property file reference.  Please specify one or the other.");
       }
       if (resource != null) {
         defaults.putAll(Resources.getResourceAsProperties(resource));
       } else if (url != null) {
+        //url用来配置远程地址，比如"https://raw.githubusercontent.com/cfhy/mybatis-3/master/src/test/java/prop.properties"
         defaults.putAll(Resources.getUrlAsProperties(url));
       }
+      //首先default存放的是properties的子property，然后存的是resource或者url读到的property，然后存的是builder方法传进来的property
+      //由于后面的会覆盖掉前面设置的同名的key，所以通过代码传进来的优先级最高，properties下面配置的优先级最低
       Properties vars = configuration.getVariables();
       if (vars != null) {
         defaults.putAll(vars);
       }
+      //把最终的properties扔给解析器和配置对象各一份，方便以后使用
       parser.setVariables(defaults);
       configuration.setVariables(defaults);
     }
