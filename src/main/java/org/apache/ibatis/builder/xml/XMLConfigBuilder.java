@@ -99,20 +99,35 @@ public class XMLConfigBuilder extends BaseBuilder {
     return configuration;
   }
 
+  /**
+   * 解析配置文件
+   * @param root
+   */
   private void parseConfiguration(XNode root) {
     try {
       //issue #117 read properties first
+      //获取properties节点下的数据，并保存到Configuration对象的variables字段中
       propertiesElement(root.evalNode("properties"));
+      //获取settings节点下的数据，并保持到settings中，以供接下来的程序使用
       Properties settings = settingsAsProperties(root.evalNode("settings"));
+      //加载自定义的Vfs实现，并保存到Configuration对象的vfsImpl字段中
       loadCustomVfs(settings);
+      //加载自定义的日志实现，并保存到Configuration对象的logImpl字段中
       loadCustomLogImpl(settings);
+      //获取typeAliases下的所有数据，并保存到Configuration对象的typeAliasRegistry对象的map中
       typeAliasesElement(root.evalNode("typeAliases"));
+      //获取plugins下的所有数据,把拦截器添加到Configuration对象的interceptorChain对象的interceptors list中
       pluginElement(root.evalNode("plugins"));
+      //获取objectFactory下的所有数据，并保存到Configuration对象的objectFactory字段
       objectFactoryElement(root.evalNode("objectFactory"));
+      //获取objectWrapperFactory节点,并保存到Configuration对象的objectWrapperFactory字段
       objectWrapperFactoryElement(root.evalNode("objectWrapperFactory"));
+      //获取reflectorFactory节点,并保存到Configuration对象的reflectorFactory字段
       reflectorFactoryElement(root.evalNode("reflectorFactory"));
+      //执行到这里，settings节点下还有很多值未设置，该方法用于设置这些属性的值
       settingsElement(settings);
       // read it after objectFactory and objectWrapperFactory issue #631
+      //获取environments节点下的数据
       environmentsElement(root.evalNode("environments"));
       databaseIdProviderElement(root.evalNode("databaseIdProvider"));
       typeHandlerElement(root.evalNode("typeHandlers"));
@@ -123,7 +138,7 @@ public class XMLConfigBuilder extends BaseBuilder {
   }
 
   /**
-   * 获取settings下的所有子节点
+   * 获取settings下的所有子节点，并保持到Properties中，以供后面的程序使用
    * @param context
    * @return
    */
@@ -145,7 +160,7 @@ public class XMLConfigBuilder extends BaseBuilder {
   }
 
   /**
-   * 加载自定义的Vfs
+   * 加载自定义的Vfs，并设置到configuration中
    * @param props
    * @throws ClassNotFoundException
    */
@@ -163,25 +178,46 @@ public class XMLConfigBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 设置自定义的日志实现 ，这里为什么是用resolveClass，而不是classForName，主要是mybatis内定了几种日志实现，
+   * 比如别名为SLF4J、COMMONS_LOGGING，对应的实现为Slf4jImpl、JakartaCommonsLoggingImpl，如果配置的别名，
+   * 则会根据别名找对应的实现类，如果配置的是自定义实现，则调用Resources.classForName(clazz)获取实现类的Class，并设置到configuration中
+   * @param props
+   */
   private void loadCustomLogImpl(Properties props) {
     Class<? extends Log> logImpl = resolveClass(props.getProperty("logImpl"));
     configuration.setLogImpl(logImpl);
   }
 
+  /**
+   * 获取typeAliases下的所有数据，
+   * 由于可以配置 package和单个别名，所有有两种解析方式，比如
+   *     <typeAliases>
+   *         <typeAlias alias="Author" type="yyb.model.Author"/>
+   *         <typeAlias alias="Blog" type="yyb.model.Blog"/>
+   *         <package name="yyb.model"/>
+   *     </typeAliases>
+   * @param parent
+   */
   private void typeAliasesElement(XNode parent) {
     if (parent != null) {
       for (XNode child : parent.getChildren()) {
         if ("package".equals(child.getName())) {
+          //遍历typeAliases下的所有子节点，如果是package，则获取它的包名，然后根据包名获取该包下的所有类
           String typeAliasPackage = child.getStringAttribute("name");
           configuration.getTypeAliasRegistry().registerAliases(typeAliasPackage);
         } else {
+          //遍历typeAliases下的所有子节点，如果不是package，则获取它的别名和别名对应的类，然后获取该类的Class
           String alias = child.getStringAttribute("alias");
           String type = child.getStringAttribute("type");
           try {
             Class<?> clazz = Resources.classForName(type);
             if (alias == null) {
+              //如果别名为空，则解析类上是否有Alias注解，若有则使用注解的值，否则使用类名作为别名
               typeAliasRegistry.registerAlias(clazz);
             } else {
+              //如果别名为空，并且map中不存在，则添加；
+              // 如果存在，并且值不一致，也添加，但是map中添加已存在的key会覆盖之前的值，所以最后添加的别名优先级最高
               typeAliasRegistry.registerAlias(alias, clazz);
             }
           } catch (ClassNotFoundException e) {
@@ -192,36 +228,78 @@ public class XMLConfigBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 解析xml配置中的拦截器
+   * <plugin interceptor="yyb.useful.start02.ExamplePlugin">
+   *    <property name="someProperty" value="100"/>
+   * </plugin>
+   * @param parent
+   * @throws Exception
+   */
   private void pluginElement(XNode parent) throws Exception {
     if (parent != null) {
+      //遍历所有的plugin节点，读取interceptor属性
       for (XNode child : parent.getChildren()) {
         String interceptor = child.getStringAttribute("interceptor");
+        //获取plugin下的节点的所有property属性
         Properties properties = child.getChildrenAsProperties();
+        //添加interceptor的别名到typeAliasRegistry对象的map中，并且根据返回Class创建该拦截器的实例，
+        //从强制转换可以看出，plugin必定要实现Interceptor接口
         Interceptor interceptorInstance = (Interceptor) resolveClass(interceptor).newInstance();
+        //把读取的属性设置到拦截器实例中
         interceptorInstance.setProperties(properties);
+        //把拦截器添加到Configuration对象的interceptorChain对象的interceptors list中
         configuration.addInterceptor(interceptorInstance);
       }
     }
   }
 
+  /**
+   * 解析objectFactory
+   * <objectFactory type="yyb.useful.start02.ExampleObjectFactory">
+   *     <property name="someProperty" value="100"/>
+   * </objectFactory>
+   * @param context
+   * @throws Exception
+   */
   private void objectFactoryElement(XNode context) throws Exception {
     if (context != null) {
+      //获取objectFactory 的type属性
       String type = context.getStringAttribute("type");
+      //获取所有的property节点
       Properties properties = context.getChildrenAsProperties();
+      //添加objectFactory的别名到typeAliasRegistry对象的map中，并且根据返回Class创建该ObjectFactory的实例
       ObjectFactory factory = (ObjectFactory) resolveClass(type).newInstance();
+      //设置属性到factory对象中
       factory.setProperties(properties);
+      //设置factory到Configuration对象的objectFactory字段
       configuration.setObjectFactory(factory);
     }
   }
 
+  /**
+   * 解析objectWrapperFactory节点
+   *  <objectWrapperFactory type=""/>
+   * @param context
+   * @throws Exception
+   */
   private void objectWrapperFactoryElement(XNode context) throws Exception {
     if (context != null) {
+      //获取type属性的值
       String type = context.getStringAttribute("type");
+      //添加objectWrapperFactory类型的别名到typeAliasRegistry对象的map中，并且根据返回Class创建该objectWrapperFactory的实例
       ObjectWrapperFactory factory = (ObjectWrapperFactory) resolveClass(type).newInstance();
+      //添加到Configuration对象的objectWrapperFactory字段中
       configuration.setObjectWrapperFactory(factory);
     }
   }
 
+  /**
+   * 解析reflectorFactory节点,和objectWrapperFactory一模一样
+   * <reflectorFactory type=""/>
+   * @param context
+   * @throws Exception
+   */
   private void reflectorFactoryElement(XNode context) throws Exception {
     if (context != null) {
       String type = context.getStringAttribute("type");
@@ -265,6 +343,10 @@ public class XMLConfigBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 为settings元素设置值
+   * @param props
+   */
   private void settingsElement(Properties props) {
     configuration.setAutoMappingBehavior(AutoMappingBehavior.valueOf(props.getProperty("autoMappingBehavior", "PARTIAL")));
     configuration.setAutoMappingUnknownColumnBehavior(AutoMappingUnknownColumnBehavior.valueOf(props.getProperty("autoMappingUnknownColumnBehavior", "NONE")));
@@ -293,9 +375,37 @@ public class XMLConfigBuilder extends BaseBuilder {
     configuration.setConfigurationFactory(resolveClass(props.getProperty("configurationFactory")));
   }
 
+  /**
+   * 解析environments节点下的数据
+   *  <environments default="development">
+   *     <environment id="development">
+   *         <transactionManager type="JDBC">
+   *             <property name="..." value="..."/>
+   *         </transactionManager>
+   *         <dataSource type="POOLED">
+   *             <property name="driver" value="${driver}"/>
+   *             <property name="url" value="${url}"/>
+   *             <property name="username" value="${username}"/>
+   *             <property name="password" value="${password}"/>
+   *         </dataSource>
+   *     </environment>
+   *     <environment id="production">
+   *         <transactionManager type="yyb.useful.start02.ExampleTransactionFactory"></transactionManager>
+   *         <dataSource type="UNPOOLED">
+   *             <property name="driver" value="${driver}"/>
+   *             <property name="url" value="${url}"/>
+   *             <property name="username" value="${username}"/>
+   *             <property name="password" value="${password}"/>
+   *         </dataSource>
+   *     </environment>
+   * </environments>
+   * @param context
+   * @throws Exception
+   */
   private void environmentsElement(XNode context) throws Exception {
     if (context != null) {
       if (environment == null) {
+        //获取environments的default属性的值
         environment = context.getStringAttribute("default");
       }
       for (XNode child : context.getChildren()) {

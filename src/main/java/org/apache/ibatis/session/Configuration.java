@@ -153,7 +153,7 @@ public class Configuration {
 
     protected ReflectorFactory reflectorFactory = new DefaultReflectorFactory();
 
-    //对应<objectFactory/>节点
+    //对应<objectFactory/>节点，如果不配置，则默认使用DefaultObjectFactory
     protected ObjectFactory objectFactory = new DefaultObjectFactory();
 
     protected ObjectWrapperFactory objectWrapperFactory = new DefaultObjectWrapperFactory();

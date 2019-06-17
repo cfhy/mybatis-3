@@ -263,7 +263,7 @@ Configuration类代码量很庞大，分析的时候对照mybatis-config.xml就�
           //RawLanguageDriver:在确保只有静态sql时，可以使用，不得含有任何动态sql的内容
           typeAliasRegistry.registerAlias("RAW", RawLanguageDriver.class);
   
-          //日志
+          //日志 
           typeAliasRegistry.registerAlias("SLF4J", Slf4jImpl.class);
           typeAliasRegistry.registerAlias("COMMONS_LOGGING", JakartaCommonsLoggingImpl.class);
           typeAliasRegistry.registerAlias("LOG4J", Log4jImpl.class);

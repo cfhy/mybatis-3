@@ -9,13 +9,14 @@
     </properties>
     <settings>
         <setting name="logImpl" value="LOG4J"/>
-        <setting name="logImpl" value="LOG4J"/>
+        <setting name="logImpl" value="STDOUT_LOGGING"/>
         <setting name="cacheEnabled" value="false"/>
         <setting name="lazyLoadingEnabled" value="false"/>
     </settings>
     <typeAliases>
         <typeAlias alias="Author" type="yyb.model.Author"/>
         <typeAlias alias="Blog" type="yyb.model.Blog"/>
+        <package name="yyb.model"/>
     </typeAliases>
     <typeHandlers>
         <typeHandler handler="yyb.useful.start02.ExampleTypeHandler"/>
@@ -28,21 +29,13 @@
             <property name="someProperty" value="100"/>
         </plugin>
     </plugins>
+    <reflectorFactory type=""/>
     <environments default="development">
         <environment id="development">
             <transactionManager type="JDBC">
                 <property name="..." value="..."/>
             </transactionManager>
             <dataSource type="POOLED">
-                <property name="driver" value="${driver}"/>
-                <property name="url" value="${url}"/>
-                <property name="username" value="${username}"/>
-                <property name="password" value="${password}"/>
-            </dataSource>
-        </environment>
-        <environment id="production">
-            <transactionManager type="JDBC"></transactionManager>
-            <dataSource type="UNPOOLED">
                 <property name="driver" value="${driver}"/>
                 <property name="url" value="${url}"/>
                 <property name="username" value="${username}"/>
