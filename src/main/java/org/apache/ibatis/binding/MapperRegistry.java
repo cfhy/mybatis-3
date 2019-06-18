@@ -58,12 +58,15 @@ public class MapperRegistry {
   }
 
   public <T> void addMapper(Class<T> type) {
+    //mapper必须是接口
     if (type.isInterface()) {
+      //如果mapper已存在，则抛错
       if (hasMapper(type)) {
         throw new BindingException("Type " + type + " is already known to the MapperRegistry.");
       }
       boolean loadCompleted = false;
       try {
+        //添加到map中
         knownMappers.put(type, new MapperProxyFactory<>(type));
         // It's important that the type is added before the parser is run
         // otherwise the binding may automatically be attempted by the
@@ -91,8 +94,10 @@ public class MapperRegistry {
    */
   public void addMappers(String packageName, Class<?> superType) {
     ResolverUtil<Class<?>> resolverUtil = new ResolverUtil<>();
+    //查找包下面的所有superType的子类（继承或实现），该方法内部会调用VFS，查找包下的所有文件
     resolverUtil.find(new ResolverUtil.IsA(superType), packageName);
     Set<Class<? extends Class<?>>> mapperSet = resolverUtil.getClasses();
+    //遍历满足条件的类
     for (Class<?> mapperClass : mapperSet) {
       addMapper(mapperClass);
     }

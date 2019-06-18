@@ -40,6 +40,7 @@ public class UnpooledDataSourceFactory implements DataSourceFactory {
 
   @Override
   public void setProperties(Properties properties) {
+    //这里使用if/else,也可以达到目的，但是硬编码扩展性不太好，如果换成其他名称就无法使用了。使用反射更优雅
     Properties driverProperties = new Properties();
     MetaObject metaDataSource = SystemMetaObject.forObject(dataSource);
     for (Object key : properties.keySet()) {

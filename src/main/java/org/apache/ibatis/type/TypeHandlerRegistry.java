@@ -347,6 +347,7 @@ public final class TypeHandlerRegistry {
   }
 
   private <T> void register(Type javaType, TypeHandler<? extends T> typeHandler) {
+    //判断类上是否有MappedJdbcTypes注解
     MappedJdbcTypes mappedJdbcTypes = typeHandler.getClass().getAnnotation(MappedJdbcTypes.class);
     if (mappedJdbcTypes != null) {
       for (JdbcType handledJdbcType : mappedJdbcTypes.value()) {
@@ -372,8 +373,10 @@ public final class TypeHandlerRegistry {
 
   private void register(Type javaType, JdbcType jdbcType, TypeHandler<?> handler) {
     if (javaType != null) {
+      //从typeHandlerMap中获取javaType的值
       Map<JdbcType, TypeHandler<?>> map = typeHandlerMap.get(javaType);
       if (map == null || map == NULL_TYPE_HANDLER_MAP) {
+        //如果为空，创建新的map
         map = new HashMap<>();
         typeHandlerMap.put(javaType, map);
       }
@@ -389,10 +392,13 @@ public final class TypeHandlerRegistry {
   // Only handler type
 
   public void register(Class<?> typeHandlerClass) {
+    //是否找到了映射的类型
     boolean mappedTypeFound = false;
+    //判断类上是否有MappedTypes注解
     MappedTypes mappedTypes = typeHandlerClass.getAnnotation(MappedTypes.class);
     if (mappedTypes != null) {
       for (Class<?> javaTypeClass : mappedTypes.value()) {
+        //如果有注解，获取注解的值
         register(javaTypeClass, typeHandlerClass);
         mappedTypeFound = true;
       }
@@ -441,13 +447,19 @@ public final class TypeHandlerRegistry {
   }
 
   // scan
-
+  /**
+   * 解析某包名下的所有typeHandler
+   * @param packageName 包名
+   */
   public void register(String packageName) {
     ResolverUtil<Class<?>> resolverUtil = new ResolverUtil<>();
+    //查找包下面的所有TypeHandler的子类（继承或实现），该方法内部会调用VFS，查找包下的所有文件
     resolverUtil.find(new ResolverUtil.IsA(TypeHandler.class), packageName);
     Set<Class<? extends Class<?>>> handlerSet = resolverUtil.getClasses();
+    //遍历满足条件的类
     for (Class<?> type : handlerSet) {
       //Ignore inner classes and interfaces (including package-info.java) and abstract classes
+      //过滤掉接口，匿名内部类，成员内部类
       if (!type.isAnonymousClass() && !type.isInterface() && !Modifier.isAbstract(type.getModifiers())) {
         register(type);
       }

@@ -20,16 +20,17 @@
     </typeAliases>
     <typeHandlers>
         <typeHandler handler="yyb.useful.start02.ExampleTypeHandler"/>
+        <package name="yyb.useful.start02"/>
     </typeHandlers>
     <objectFactory type="yyb.useful.start02.ExampleObjectFactory">
         <property name="someProperty" value="100"/>
     </objectFactory>
+    <reflectorFactory type="org.apache.ibatis.builder.CustomReflectorFactory"/>
     <plugins>
         <plugin interceptor="yyb.useful.start02.ExamplePlugin">
             <property name="someProperty" value="100"/>
         </plugin>
     </plugins>
-    <reflectorFactory type=""/>
     <environments default="development">
         <environment id="development">
             <transactionManager type="JDBC">
@@ -52,7 +53,11 @@
             </dataSource>
         </environment>
     </environments>
+    <databaseIdProvider type="DB_VENDOR">
+        <property name="HSQL Database Engine" value="hsql" />
+    </databaseIdProvider>
     <mappers>
         <mapper resource="yyb/useful/start01/BlogMapper.xml"/>
+        <package name="yyb.useful.start02"/>
     </mappers>
 </configuration>

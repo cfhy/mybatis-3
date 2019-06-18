@@ -19,6 +19,9 @@ public class GenericTypeHandler<E extends MyObject> extends BaseTypeHandler<E> {
 
     private Class<E> type;
 
+    public GenericTypeHandler() {
+    }
+
     public GenericTypeHandler(Class<E> type) {
         if (type == null) throw new IllegalArgumentException("Type argument cannot be null");
         this.type = type;

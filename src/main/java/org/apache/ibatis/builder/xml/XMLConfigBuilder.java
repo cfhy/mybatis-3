@@ -129,8 +129,11 @@ public class XMLConfigBuilder extends BaseBuilder {
       // read it after objectFactory and objectWrapperFactory issue #631
       //获取environments节点下的数据
       environmentsElement(root.evalNode("environments"));
+      //获取databaseIdProvider节点
       databaseIdProviderElement(root.evalNode("databaseIdProvider"));
+      //获取typeHandlers节点
       typeHandlerElement(root.evalNode("typeHandlers"));
+      //获取mappers节点
       mapperElement(root.evalNode("mappers"));
     } catch (Exception e) {
       throw new BuilderException("Error parsing SQL Mapper Configuration. Cause: " + e, e);
@@ -409,11 +412,17 @@ public class XMLConfigBuilder extends BaseBuilder {
         environment = context.getStringAttribute("default");
       }
       for (XNode child : context.getChildren()) {
+        //获取environment的id属性的值
         String id = child.getStringAttribute("id");
+        //如果environment和id相等，则为要使用的环境
         if (isSpecifiedEnvironment(id)) {
+          //创建TransactionFactory类
           TransactionFactory txFactory = transactionManagerElement(child.evalNode("transactionManager"));
+          //创建DataSourceFactory类
           DataSourceFactory dsFactory = dataSourceElement(child.evalNode("dataSource"));
+          //获取DataSource对象
           DataSource dataSource = dsFactory.getDataSource();
+          //构建Environment对象，并设置到configuration中
           Environment.Builder environmentBuilder = new Environment.Builder(id)
               .transactionFactory(txFactory)
               .dataSource(dataSource);
@@ -423,67 +432,125 @@ public class XMLConfigBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 解析databaseIdProvider节点
+   *  <databaseIdProvider type="DB_VENDOR">
+   *  	<property name="HSQL Database Engine" value="hsql" />
+   *  </databaseIdProvider>
+   * @param context
+   * @throws Exception
+   */
   private void databaseIdProviderElement(XNode context) throws Exception {
     DatabaseIdProvider databaseIdProvider = null;
     if (context != null) {
+      // 获取type属性的值
       String type = context.getStringAttribute("type");
       // awful patch to keep backward compatibility
       if ("VENDOR".equals(type)) {
         type = "DB_VENDOR";
       }
       Properties properties = context.getChildrenAsProperties();
+      //添加databaseIdProvider类型的别名到typeAliasRegistry对象的map中，并且根据返回Class创建该databaseIdProvider的实例
       databaseIdProvider = (DatabaseIdProvider) resolveClass(type).newInstance();
       databaseIdProvider.setProperties(properties);
     }
     Environment environment = configuration.getEnvironment();
     if (environment != null && databaseIdProvider != null) {
       String databaseId = databaseIdProvider.getDatabaseId(environment.getDataSource());
+      //根据DataSource获取databaseId，并设置到configuration对象中
       configuration.setDatabaseId(databaseId);
     }
   }
 
+  /**
+   * 解析transactionManager节点
+   *  <transactionManager type="JDBC">
+   *      <property name="..." value="..."/>
+   *  </transactionManager>
+   * @param context
+   * @return
+   * @throws Exception
+   */
   private TransactionFactory transactionManagerElement(XNode context) throws Exception {
     if (context != null) {
+      //获取type属性
       String type = context.getStringAttribute("type");
+      //获取transactionManager节点的所有property节点
       Properties props = context.getChildrenAsProperties();
+      //添加transactionManager的别名到typeAliasRegistry对象的map中，并且根据返回Class创建该TransactionFactory的实例
       TransactionFactory factory = (TransactionFactory) resolveClass(type).newInstance();
+      //把属性设置到TransactionFactory
       factory.setProperties(props);
       return factory;
     }
     throw new BuilderException("Environment declaration requires a TransactionFactory.");
   }
 
+  /**
+   *
+   * <dataSource type="UNPOOLED">
+   *     <property name="driver" value="${driver}"/>
+   *     <property name="url" value="${url}"/>
+   *     <property name="username" value="${username}"/>
+   *     <property name="password" value="${password}"/>
+   * </dataSource>
+   * @param context
+   * @return
+   * @throws Exception
+   */
   private DataSourceFactory dataSourceElement(XNode context) throws Exception {
     if (context != null) {
       String type = context.getStringAttribute("type");
+      //此处的getChildren()方法中完成了${}替换
       Properties props = context.getChildrenAsProperties();
+      //添加dataSource的别名到typeAliasRegistry对象的map中，并且根据返回Class创建该DataSourceFactory的实例
       DataSourceFactory factory = (DataSourceFactory) resolveClass(type).newInstance();
+      //为DataSource设置数据库连接属性
       factory.setProperties(props);
       return factory;
     }
     throw new BuilderException("Environment declaration requires a DataSourceFactory.");
   }
 
+  /**
+   * 解析typeHandlers节点
+   * <typeHandlers>
+   *     <typeHandler handler="yyb.useful.start02.ExampleTypeHandler"/>
+   *     <package name="yyb.useful.start02"/>
+   * </typeHandlers>
+   * @param parent
+   */
   private void typeHandlerElement(XNode parent) {
     if (parent != null) {
       for (XNode child : parent.getChildren()) {
         if ("package".equals(child.getName())) {
+          //遍历typeHandlers下的所有子节点，如果是package，则获取它的包名，然后根据包名获取该包下的所有类
           String typeHandlerPackage = child.getStringAttribute("name");
+          //此处和
           typeHandlerRegistry.register(typeHandlerPackage);
         } else {
+          //遍历typeHandlers下的所有子节点，如果不是package，则获取它的别名和别名对应的类，然后获取该类的Class
+          //获取javaType，jdbcType，handler属性的值
           String javaTypeName = child.getStringAttribute("javaType");
           String jdbcTypeName = child.getStringAttribute("jdbcType");
           String handlerTypeName = child.getStringAttribute("handler");
+          //添加javaType的别名到typeAliasRegistry对象的map中，并且返回Class
           Class<?> javaTypeClass = resolveClass(javaTypeName);
+          //添加jdbcType的别名到typeAliasRegistry对象的map中，并且返回Class
           JdbcType jdbcType = resolveJdbcType(jdbcTypeName);
+          //添加typeHandler的别名到typeAliasRegistry对象的map中，并且返回Class
           Class<?> typeHandlerClass = resolveClass(handlerTypeName);
+          //最终把typeHandler保存到了TypeHandlerRegistry的typeHandlerMap中
           if (javaTypeClass != null) {
             if (jdbcType == null) {
+              //处理javaTypeClass存在，jdbcType不存在的情况
               typeHandlerRegistry.register(javaTypeClass, typeHandlerClass);
             } else {
+              //处理javaTypeClass存在，jdbcType也存在的情况
               typeHandlerRegistry.register(javaTypeClass, jdbcType, typeHandlerClass);
             }
           } else {
+            //处理javaTypeClass不存在的情况
             typeHandlerRegistry.register(typeHandlerClass);
           }
         }
@@ -491,9 +558,17 @@ public class XMLConfigBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   *  <mappers>
+   *      <mapper resource="yyb/useful/start01/BlogMapper.xml"/>
+   *  </mappers>
+   * @param parent
+   * @throws Exception
+   */
   private void mapperElement(XNode parent) throws Exception {
     if (parent != null) {
       for (XNode child : parent.getChildren()) {
+        //遍历mappers下的所有子节点，如果是package，则获取它的包名，然后根据包名获取该包下的所有类
         if ("package".equals(child.getName())) {
           String mapperPackage = child.getStringAttribute("name");
           configuration.addMappers(mapperPackage);
