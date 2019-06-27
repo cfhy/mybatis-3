@@ -30,6 +30,18 @@
             </discriminator>
         </collection>
     </resultMap>
+    <resultMap id="blogResult" type="Blog">
+        <collection property="posts" javaType="ArrayList" column="id" ofType="Post" select="selectPostsForBlog"/>
+    </resultMap>
+    <resultMap id="blogResult1" type="Blog">
+        <id property="id" column="blog_id" />
+        <result property="title" column="blog_title"/>
+        <collection property="posts" ofType="Post">
+            <id property="id" column="post_id"/>
+            <result property="subject" column="post_subject"/>
+            <result property="body" column="post_body"/>
+        </collection>
+    </resultMap>
     <!-- 非常复杂的语句 -->
     <select id="selectBlogDetails" resultMap="detailedBlogResultMap">
   select
@@ -64,4 +76,13 @@
        left outer join tag T on PT.tag_id = T.id
   where B.id = #{id}
 </select>
+
+
+    <select id="selectBlog" resultMap="blogResult">
+      SELECT * FROM BLOG WHERE ID = #{id}
+    </select>
+
+    <select id="selectPostsForBlog" resultType="Post">
+      SELECT * FROM POST WHERE BLOG_ID = #{id}
+    </select>
 </mapper>
