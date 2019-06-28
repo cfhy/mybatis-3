@@ -1,4 +1,4 @@
-package yyb.useful.start03;
+package yyb.useful.start03.mapper;
 
 
 import yyb.model.Blog;

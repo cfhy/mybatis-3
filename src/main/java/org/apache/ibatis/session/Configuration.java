@@ -195,7 +195,7 @@ public class Configuration {
     protected final Map<String, ParameterMap> parameterMaps = new StrictMap<>("Parameter Maps collection");
     //存储xml映射文件中<selectkey>标签的解析出来的内容
     protected final Map<String, KeyGenerator> keyGenerators = new StrictMap<>("Key Generators collection");
-
+    //存储已加载的mapper文件
     protected final Set<String> loadedResources = new HashSet<>();
     //存储xml映射文件中<sql>标签的解析出来的内容
     protected final Map<String, XNode> sqlFragments = new StrictMap<>("XML fragments parsed from previous mappers");
@@ -212,6 +212,9 @@ public class Configuration {
      * A map holds cache-ref relationship. The key is the namespace that
      * references a cache bound to another namespace and the value is the
      * namespace which the actual cache is bound to.
+     *
+     *
+     * cache-ref关系，key是引用另一个缓存的命名空间，value是实际缓存的命名空间
      */
     protected final Map<String, String> cacheRefMap = new HashMap<>();
 

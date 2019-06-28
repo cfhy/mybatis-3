@@ -126,16 +126,20 @@ public class MapperAnnotationBuilder {
   public void parse() {
     String resource = type.toString();
     if (!configuration.isResourceLoaded(resource)) {
+      //加载映射文件
       loadXmlResource();
       configuration.addLoadedResource(resource);
       assistant.setCurrentNamespace(type.getName());
+      //解析缓存
       parseCache();
       parseCacheRef();
+      //获取mapper接口的所有方法
       Method[] methods = type.getMethods();
       for (Method method : methods) {
         try {
           // issue #237
           if (!method.isBridge()) {
+            //根据方法解析sql语句
             parseStatement(method);
           }
         } catch (IncompleteElementException e) {
@@ -161,11 +165,16 @@ public class MapperAnnotationBuilder {
     }
   }
 
+  /**
+   * 1.mapper节点如果配置的是xml的地址，则xml和mapper存放的位置无要求
+   * 2.mapper节点如果配置的是class或者package，则xml和mapper存放的位置必须保持一致（即在同一个包，否则无法找到xml）
+   */
   private void loadXmlResource() {
     // Spring may not know the real resource name so we check a flag
     // to prevent loading again a resource twice
     // this flag is set at XMLMapperBuilder#bindMapperForNamespace
     if (!configuration.isResourceLoaded("namespace:" + type.getName())) {
+      //根据类的名字构建mapper xml的路径
       String xmlResource = type.getName().replace('.', '/') + ".xml";
       // #1347
       InputStream inputStream = type.getResourceAsStream("/" + xmlResource);
@@ -178,18 +187,37 @@ public class MapperAnnotationBuilder {
         }
       }
       if (inputStream != null) {
+        //创建 XMLMapperBuilder对象，用于解析映射文件
         XMLMapperBuilder xmlParser = new XMLMapperBuilder(inputStream, assistant.getConfiguration(), xmlResource, configuration.getSqlFragments(), type.getName());
+        //解析映射文件
         xmlParser.parse();
       }
     }
   }
 
+  /**
+   * 解析Mapper接口上的CacheNamespace注解
+   *
+   * CacheNamespace相对应<cache>标签，为给定的命名空间（比如类）配置缓存。
+   * 属性有：implemetation, eviction, flushInterval, size, readWrite, blocking 和properties。
+   *
+   * @CacheNamespace(implementation = CustomCache.class, properties = {
+   *     @Property(name = "stringValue", value = "${stringProperty}"),
+   *     @Property(name = "integerValue", value = "${integerProperty}"),
+   *     @Property(name = "longValue", value = "${longProperty}")
+   * })
+   */
   private void parseCache() {
     CacheNamespace cacheDomain = type.getAnnotation(CacheNamespace.class);
     if (cacheDomain != null) {
+      //size（引用数目）属性可以被设置为任意正整数，要注意欲缓存对象的大小和运行环境中可用的内存资源。默认值是 1024。
       Integer size = cacheDomain.size() == 0 ? null : cacheDomain.size();
+      //flushInterval（刷新间隔）属性可以被设置为任意的正整数，设置的值应该是一个以毫秒为单位的合理时间量。
+      // 默认情况是不设置，也就是没有刷新间隔，缓存仅仅会在调用语句时刷新。
       Long flushInterval = cacheDomain.flushInterval() == 0 ? null : cacheDomain.flushInterval();
+      //读取Property，里面的${}已被具体的值替换
       Properties props = convertToProperties(cacheDomain.properties());
+      //创建缓存对象并添加到Configuration对象中
       assistant.useNewCache(cacheDomain.implementation(), cacheDomain.eviction(), flushInterval, size, cacheDomain.readWrite(), cacheDomain.blocking(), props);
     }
   }
@@ -296,9 +324,16 @@ public class MapperAnnotationBuilder {
     return null;
   }
 
+  /**
+   * 解析mapper.xml 的sql
+   * @param method
+   */
   void parseStatement(Method method) {
+    //获取参数类型
     Class<?> parameterTypeClass = getParameterType(method);
+    //获取语言
     LanguageDriver languageDriver = getLanguageDriver(method);
+    //
     SqlSource sqlSource = getSqlSourceFromAnnotations(method, parameterTypeClass, languageDriver);
     if (sqlSource != null) {
       Options options = method.getAnnotation(Options.class);
@@ -381,20 +416,31 @@ public class MapperAnnotationBuilder {
     }
   }
 
+  /**
+   * 获取语言
+   * @param method
+   * @return
+   */
   private LanguageDriver getLanguageDriver(Method method) {
+    //判断方法是是否有Lang注解
     Lang lang = method.getAnnotation(Lang.class);
     Class<? extends LanguageDriver> langClass = null;
     if (lang != null) {
       langClass = lang.value();
     }
+    //获取语言langClass是null，则使用默认的
     return configuration.getLanguageDriver(langClass);
   }
 
   private Class<?> getParameterType(Method method) {
     Class<?> parameterType = null;
+    //获取方法的参数列表
     Class<?>[] parameterTypes = method.getParameterTypes();
+    //遍历参数列表
     for (Class<?> currentParameterType : parameterTypes) {
+      //如果参数不是RowBounds和ResultHandler的子类
       if (!RowBounds.class.isAssignableFrom(currentParameterType) && !ResultHandler.class.isAssignableFrom(currentParameterType)) {
+       //如果只有1个参数，则使用该参数的类型，如果有多个则使用ParamMap类型
         if (parameterType == null) {
           parameterType = currentParameterType;
         } else {
@@ -465,6 +511,7 @@ public class MapperAnnotationBuilder {
 
   private SqlSource getSqlSourceFromAnnotations(Method method, Class<?> parameterType, LanguageDriver languageDriver) {
     try {
+      //获取SQL是增删改查的哪一种
       Class<? extends Annotation> sqlAnnotationType = getSqlAnnotationType(method);
       Class<? extends Annotation> sqlProviderAnnotationType = getSqlProviderAnnotationType(method);
       if (sqlAnnotationType != null) {

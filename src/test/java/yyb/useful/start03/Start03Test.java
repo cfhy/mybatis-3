@@ -6,6 +6,7 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.junit.Test;
 import yyb.model.Blog;
+import yyb.useful.start03.mapper.BlogMapper;
 
 import java.io.IOException;
 import java.io.InputStream;

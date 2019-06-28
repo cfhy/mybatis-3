@@ -66,12 +66,13 @@ public class MapperRegistry {
       }
       boolean loadCompleted = false;
       try {
-        //添加到map中
+        //把MapperProxyFactory添加到map中，MapperProxyFactory用来创建对应mapper的代理对象
         knownMappers.put(type, new MapperProxyFactory<>(type));
         // It's important that the type is added before the parser is run
         // otherwise the binding may automatically be attempted by the
         // mapper parser. If the type is already known, it won't try.
         MapperAnnotationBuilder parser = new MapperAnnotationBuilder(config, type);
+        //Mapper注解解析
         parser.parse();
         loadCompleted = true;
       } finally {

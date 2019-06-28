@@ -2,7 +2,8 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="yyb.useful.start03.BlogMapper">
+<mapper namespace="yyb.useful.start03.mapper.BlogMapper">
+
     <!-- 非常复杂的结果映射 -->
     <resultMap id="detailedBlogResultMap" type="Blog">
         <id property="id" column="blog_id"/>
@@ -42,6 +43,7 @@
             <result property="body" column="post_body"/>
         </collection>
     </resultMap>
+
     <!-- 非常复杂的语句 -->
     <select id="selectBlogDetails" resultMap="detailedBlogResultMap">
   select

@@ -90,7 +90,9 @@ public class CacheBuilder {
   }
 
   public Cache build() {
+    //设置默认实现
     setDefaultImplementations();
+    //创建实现类的实例
     Cache cache = newBaseCacheInstance(implementation, id);
     setCacheProperties(cache);
     // issue #352, do not apply decorators to custom caches
@@ -105,7 +107,7 @@ public class CacheBuilder {
     }
     return cache;
   }
-
+  //设置缓存的默认实现方式为PerpetualCache，缓存清除策略为LruCache
   private void setDefaultImplementations() {
     if (implementation == null) {
       implementation = PerpetualCache.class;
