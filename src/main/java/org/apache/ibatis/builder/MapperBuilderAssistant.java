@@ -171,7 +171,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
         .numericScale(numericScale)
         .typeHandler(typeHandlerInstance)
         .build();
-  }
+}
 
   public ResultMap addResultMap(
       String id,
@@ -368,7 +368,9 @@ public class MapperBuilderAssistant extends BaseBuilder {
       String resultSet,
       String foreignColumn,
       boolean lazy) {
+     //推断javaType
     Class<?> javaTypeClass = resolveResultJavaType(resultType, property, javaType);
+    //获取TypeHandler
     TypeHandler<?> typeHandlerInstance = resolveTypeHandler(javaTypeClass, typeHandler);
     List<ResultMapping> composites = parseCompositeColumnName(column);
     return new ResultMapping.Builder(configuration, property, column, javaTypeClass)
@@ -402,13 +404,24 @@ public class MapperBuilderAssistant extends BaseBuilder {
     return columns;
   }
 
+  /**
+   * 解析复合列名  column="{prop1=col1,prop2=col2}"
+   * @param columnName
+   * @return
+   */
   private List<ResultMapping> parseCompositeColumnName(String columnName) {
     List<ResultMapping> composites = new ArrayList<>();
+    //在使用复合主键的时候，你可以使用 column="{prop1=col1,prop2=col2}"
+    // 这样的语法来指定多个传递给嵌套 Select 查询语句的列名。
+    // 这会使得 prop1 和 prop2 作为参数对象，被设置为对应嵌套 Select 语句的参数。
     if (columnName != null && (columnName.indexOf('=') > -1 || columnName.indexOf(',') > -1)) {
       StringTokenizer parser = new StringTokenizer(columnName, "{}=, ", false);
       while (parser.hasMoreTokens()) {
+        //获取属性
         String property = parser.nextToken();
+        //获取列
         String column = parser.nextToken();
+        //构建ResultMapping
         ResultMapping complexResultMapping = new ResultMapping.Builder(
             configuration, property, column, configuration.getTypeHandlerRegistry().getUnknownTypeHandler()).build();
         composites.add(complexResultMapping);
@@ -417,7 +430,15 @@ public class MapperBuilderAssistant extends BaseBuilder {
     return composites;
   }
 
+  /**
+   * 推断javaType
+   * @param resultType 要返回的类型
+   * @param property 属性
+   * @param javaType java类型
+   * @return javaType的Class
+   */
   private Class<?> resolveResultJavaType(Class<?> resultType, String property, Class<?> javaType) {
+    //如果javaType为空，则反射获取setXXX的类型
     if (javaType == null && property != null) {
       try {
         MetaClass metaResultType = MetaClass.forClass(resultType, configuration.getReflectorFactory());

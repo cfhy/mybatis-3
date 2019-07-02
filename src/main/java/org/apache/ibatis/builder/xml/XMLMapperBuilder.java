@@ -336,7 +336,7 @@ public class XMLMapperBuilder extends BaseBuilder {
     List<ResultMapping> resultMappings = new ArrayList<>();
     //把额外的ResultMap添加到resultMappings中
     resultMappings.addAll(additionalResultMappings);
-    //获取ResultMap的所有子节点
+    //获取ResultMap的所有一级子节点
     List<XNode> resultChildren = resultMapNode.getChildren();
     //遍历这些子节点
     for (XNode resultChild : resultChildren) {
@@ -348,6 +348,7 @@ public class XMLMapperBuilder extends BaseBuilder {
         discriminator = processDiscriminatorElement(resultChild, typeClass, resultMappings);
       } else {
         List<ResultFlag> flags = new ArrayList<>();
+        //处理ID标签
         if ("id".equals(resultChild.getName())) {
           flags.add(ResultFlag.ID);
         }
@@ -438,7 +439,7 @@ public class XMLMapperBuilder extends BaseBuilder {
     for (XNode caseChild : context.getChildren()) {
       //获取值
       String value = caseChild.getStringAttribute("value");
-      //获取
+      //获取resultMap的ID
       String resultMap = caseChild.getStringAttribute("resultMap", processNestedResultMappings(caseChild, resultMappings, resultType));
       discriminatorMap.put(value, resultMap);
     }
@@ -514,16 +515,31 @@ public class XMLMapperBuilder extends BaseBuilder {
     //嵌套的select，用于加载复杂类型属性的映射语句的 ID
     String nestedSelect = context.getStringAttribute("select");
     //嵌套的ResultMap ID，结果映射的 ID，可以将嵌套的结果集映射到一个合适的对象树中。
+    //它可以作为使用额外 select 语句的替代方案。
+    // 它可以将多表连接操作的结果映射成一个单一的 ResultSet。这样的 ResultSet 有部分数据是重复的。
+    // 为了将结果集正确地映射到嵌套的对象树中, MyBatis 允许你“串联”结果映射，以便解决嵌套结果集的问题。
     String nestedResultMap = context.getStringAttribute("resultMap",
         processNestedResultMappings(context, Collections.emptyList(), resultType));
+    //只有association和collection有这个属性。 默认情况下，在至少一个被映射到属性的列不为空时，子对象才会被创建。
+    // 你可以在这个属性上指定非空的列来改变默认行为，指定后，Mybatis 将只在这些列非空时才创建一个子对象。
+    // 可以使用逗号分隔来指定多个列。默认值：未设置（unset）。
     String notNullColumn = context.getStringAttribute("notNullColumn");
+    //当连接多个表时，你可能会不得不使用列别名来避免在 ResultSet 中产生重复的列名。
+    // 指定 columnPrefix 列名前缀允许你将带有这些前缀的列映射到一个外部的结果映射中。
     String columnPrefix = context.getStringAttribute("columnPrefix");
+    //读取typeHandler
     String typeHandler = context.getStringAttribute("typeHandler");
+    //获取 resultSet，指定用于加载复杂类型的结果集名字。主要针对的是不使用连接的情况，多个sql语句，返回多个结果
     String resultSet = context.getStringAttribute("resultSet");
+    //指定外键对应的列名，指定的列将与父类型中 column 的给出的列进行匹配。
     String foreignColumn = context.getStringAttribute("foreignColumn");
+    //可选的。有效值为 lazy 和 eager。 指定属性后，将在映射中忽略全局配置参数 lazyLoadingEnabled，使用属性的值。
     boolean lazy = "lazy".equals(context.getStringAttribute("fetchType", configuration.isLazyLoadingEnabled() ? "lazy" : "eager"));
+    //获取javaType的class
     Class<?> javaTypeClass = resolveClass(javaType);
+    //获取typeHandler的class
     Class<? extends TypeHandler<?>> typeHandlerClass = resolveClass(typeHandler);
+    //获取JdbcType的枚举
     JdbcType jdbcTypeEnum = resolveJdbcType(jdbcType);
     return builderAssistant.buildResultMapping(resultType, property, column, javaTypeClass, jdbcTypeEnum, nestedSelect, nestedResultMap, notNullColumn, columnPrefix, typeHandlerClass, flags, resultSet, foreignColumn, lazy);
   }
@@ -545,6 +561,7 @@ public class XMLMapperBuilder extends BaseBuilder {
       if (context.getStringAttribute("select") == null) {
         //校验集合是否有set方法
         validateCollection(context, enclosingType);
+        //获取嵌套的association或者collection或者case标签下的内容
         ResultMap resultMap = resultMapElement(context, resultMappings, enclosingType);
         return resultMap.getId();
       }

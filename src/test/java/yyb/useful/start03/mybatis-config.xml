@@ -20,6 +20,6 @@
     </environments>
     <mappers>
         <mapper resource="yyb/useful/start03/mapperxml/BlogMapper.xml"/>
-        <package name="yyb.useful.start03.mapper"/>
+        <!--<package name="yyb.useful.start03.mapper"/>-->
     </mappers>
 </configuration>

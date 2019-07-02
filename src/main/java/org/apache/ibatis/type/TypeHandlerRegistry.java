@@ -428,6 +428,7 @@ public final class TypeHandlerRegistry {
 
   @SuppressWarnings("unchecked")
   public <T> TypeHandler<T> getInstance(Class<?> javaTypeClass, Class<?> typeHandlerClass) {
+    //javaTypeClass可传可不传，只是调用的构造函数不同而已，具体需要看开发者如何开发自定义的TypeHandler了
     if (javaTypeClass != null) {
       try {
         Constructor<?> c = typeHandlerClass.getConstructor(Class.class);

@@ -131,7 +131,9 @@ public abstract class BaseBuilder {
     if (typeHandlerAlias == null) {
       return null;
     }
+    //根据别名找class
     Class<?> type = resolveClass(typeHandlerAlias);
+    //如果实现了TypeHandler接口，说明它是一个typeHandler
     if (type != null && !TypeHandler.class.isAssignableFrom(type)) {
       throw new BuilderException("Type " + type.getName() + " is not a valid TypeHandler because it does not implement TypeHandler interface");
     }
@@ -145,6 +147,7 @@ public abstract class BaseBuilder {
       return null;
     }
     // javaType ignored for injected handlers see issue #746 for full detail
+    //判断typeHandler是否在map中存在，不存在则创建一个
     TypeHandler<?> handler = typeHandlerRegistry.getMappingTypeHandler(typeHandlerType);
     if (handler == null) {
       // not in registry, create a new one

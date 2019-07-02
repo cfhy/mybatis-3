@@ -169,6 +169,9 @@ public class ResultMapping {
       }
     }
 
+    /**
+     * 如果未配置typeHandler，但是配置了javaType，则查找是否有对应的typeHandler
+     */
     private void resolveTypeHandler() {
       if (resultMapping.typeHandler == null && resultMapping.javaType != null) {
         Configuration configuration = resultMapping.configuration;
