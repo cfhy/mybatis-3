@@ -10,6 +10,7 @@ import yyb.useful.start03.mapper.BlogMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Proxy;
 
 /**
  * @author yyb
@@ -30,5 +31,12 @@ public class Start03Test {
         } finally {
             session.close();
         }
+    }
+
+    @Test
+    public void testProxy(){
+        MapperProxy mapperProxy=new MapperProxy();
+        BlogMapper mapper =(BlogMapper)Proxy.newProxyInstance(BlogMapper.class.getClassLoader(), new Class[]{BlogMapper.class}, mapperProxy);
+        Blog blog = mapper.selectBlogDetails(10);
     }
 }
