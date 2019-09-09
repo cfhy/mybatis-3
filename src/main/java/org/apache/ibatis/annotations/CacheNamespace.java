@@ -27,6 +27,10 @@ import org.apache.ibatis.cache.impl.PerpetualCache;
 /**
  * @author Clinton Begin
  * @author Kazuki Shimizu
+ *
+ * 为给定的命名空间（比如类）配置缓存。
+ * 属性有：implemetation, eviction, flushInterval, size, readWrite, blocking 和properties。
+ * 相对应的 XML	为<cache>
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

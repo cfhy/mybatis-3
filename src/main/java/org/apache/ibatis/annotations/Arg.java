@@ -26,6 +26,10 @@ import org.apache.ibatis.type.UnknownTypeHandler;
 
 /**
  * @author Clinton Begin
+ *
+ * 单参数构造方法，是 ConstructorArgs 集合的一部分。
+ *  属性有：id, column, javaType, jdbcType, typeHandler, select 和 resultMap。
+ *  id 属性是布尔值，来标识用于比较的属性，和<idArg> XML 元素相似。
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

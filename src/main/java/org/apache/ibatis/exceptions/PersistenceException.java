@@ -16,6 +16,7 @@
 package org.apache.ibatis.exceptions;
 
 /**
+ * 目前 MyBatis 真正的异常基类
  * @author Clinton Begin
  */
 @SuppressWarnings("deprecation")

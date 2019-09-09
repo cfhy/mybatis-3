@@ -10,7 +10,9 @@ import yyb.useful.start03.mapper.BlogMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Proxy;
+import java.lang.reflect.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author yyb
@@ -33,10 +35,32 @@ public class Start03Test {
         }
     }
 
+    /**
+     * 动态代理测试
+     */
     @Test
     public void testProxy(){
         MapperProxy mapperProxy=new MapperProxy();
         BlogMapper mapper =(BlogMapper)Proxy.newProxyInstance(BlogMapper.class.getClassLoader(), new Class[]{BlogMapper.class}, mapperProxy);
         Blog blog = mapper.selectBlogDetails(10);
+    }
+
+    /**
+     * 泛型测试
+     */
+    @Test
+    public void testGeneralType() throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+        ArrayList<Integer> arr = new ArrayList<Integer>();
+        Class c = arr.getClass();
+        Method m = c.getMethod("add",Object.class);
+        m.invoke(arr,"add_string");
+
+        Type mySuperClass = new ArrayList<String>() {
+
+        }.getClass().getGenericSuperclass();
+        System.out.println(mySuperClass);
+        //https://www.jianshu.com/p/f292b1bde719
+        Type type = ((ParameterizedType) mySuperClass).getActualTypeArguments()[0];
+        System.out.println(type);
     }
 }

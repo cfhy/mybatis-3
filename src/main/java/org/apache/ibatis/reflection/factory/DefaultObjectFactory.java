@@ -36,6 +36,7 @@ import org.apache.ibatis.reflection.Reflector;
 
 /**
  * @author Clinton Begin
+ * 默认 ObjectFactory 的实现类。
  */
 public class DefaultObjectFactory implements ObjectFactory, Serializable {
 

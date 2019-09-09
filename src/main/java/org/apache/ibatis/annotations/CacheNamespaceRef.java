@@ -26,6 +26,11 @@ import java.lang.annotation.Target;
  * <p>
  * If you use this annotation, should be specified either {@link #value()} or {@link #name()} attribute.
  * </p>
+ *
+ * 参照另外一个命名空间的缓存来使用。属性有：value, name。
+ * 如果你使用了这个注解，你应设置 value 或者 name 属性的其中一个。
+ * value 属性用于指定 Java 类型而指定命名空间（命名空间名就是指定的 Java 类型的全限定名），
+ * name 属性（这个属性仅在MyBatis 3.4.2以上版本生效）直接指定了命名空间的名字。
  * @author Clinton Begin
  * @author Kazuki Shimizu
  */

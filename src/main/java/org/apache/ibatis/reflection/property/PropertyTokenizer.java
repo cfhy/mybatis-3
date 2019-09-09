@@ -19,6 +19,10 @@ import java.util.Iterator;
 
 /**
  * @author Clinton Begin
+ * 属性分词器，支持迭代器的访问方式
+ *
+ * 举个例子，在访问 "order[0].item[0].name" 时，我们希望拆分成 "order[0]"、"item[0]"、"name"
+ * 三段，那么就可以通过 PropertyTokenizer 来实现。
  */
 public class PropertyTokenizer implements Iterator<PropertyTokenizer> {
   private String name;

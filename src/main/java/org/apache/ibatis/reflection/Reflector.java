@@ -87,24 +87,40 @@ public class Reflector {
         }
     }
 
+    /**
+     * get方法的特征: public int getId() { return id;}
+     * @param cls
+     */
     private void addGetMethods(Class<?> cls) {
+        //可能父类和子类都有同一个get方法，所有是个List<Method>
         Map<String, List<Method>> conflictingGetters = new HashMap<>();
         //获取所有的方法，包括私有及其所有父类的方法
         Method[] methods = getClassMethods(cls);
         for (Method method : methods) {
+            //有参数，说明不是get方法
             if (method.getParameterTypes().length > 0) {
                 continue;
             }
             String name = method.getName();
+            //如果以get和is打头的方法，则视为get方法
             if ((name.startsWith("get") && name.length() > 3)
                     || (name.startsWith("is") && name.length() > 2)) {
+                //根据方法名拿到对应的字段名称（把get去掉后，把第一个大写字母转小写）
                 name = PropertyNamer.methodToProperty(name);
+                //同一个字段对应多个方法时，则同一个key会对应多个method
                 addMethodConflict(conflictingGetters, name, method);
             }
         }
+        //解决Getter方法冲突问题,如果某个字段对应多个Getter方法，则使用子类的
         resolveGetterConflicts(conflictingGetters);
     }
 
+    /**
+     * 解决Getter方法冲突问题
+     * 1、如果某个字段只有一个Getter方法，直接使用
+     * 2、如果某个字段对应多个Getter方法，则使用子类的
+     * @param conflictingGetters
+     */
     private void resolveGetterConflicts(Map<String, List<Method>> conflictingGetters) {
         for (Entry<String, List<Method>> entry : conflictingGetters.entrySet()) {
             Method winner = null;
@@ -114,6 +130,7 @@ public class Reflector {
                     winner = candidate;
                     continue;
                 }
+                //获取返回值类型
                 Class<?> winnerType = winner.getReturnType();
                 Class<?> candidateType = candidate.getReturnType();
                 if (candidateType.equals(winnerType)) {
@@ -128,6 +145,7 @@ public class Reflector {
                 } else if (candidateType.isAssignableFrom(winnerType)) {
                     // OK getter type is descendant
                 } else if (winnerType.isAssignableFrom(candidateType)) {
+                    // 如果winnerType是candidateType的父类，则使用candidate
                     winner = candidate;
                 } else {
                     throw new ReflectionException(
@@ -164,7 +182,17 @@ public class Reflector {
     }
 
     private void addMethodConflict(Map<String, List<Method>> conflictingMethods, String name, Method method) {
+        //根据字段名查找get方法，找到则返回，找不到则创建一个list，然后把当前方法添加到字段名对应的集合中
+        // 比如id，父类和子类都有getId方法，那么id对应的就有2个值，比如：
+        //public abstract java.lang.Object org.apache.ibatis.reflection.ReflectorTest$Entity.getId()
+        //public java.lang.Long org.apache.ibatis.reflection.ReflectorTest$AbstractEntity.getId()
         List<Method> list = conflictingMethods.computeIfAbsent(name, k -> new ArrayList<>());
+//        上面代码和以下代码一样
+//        List<Method> list = conflictingMethods.get(name);
+//        if(list==null){
+//            list=new ArrayList<>();
+//            conflictingMethods.put(name,list);
+//        }
         list.add(method);
     }
 
@@ -223,17 +251,27 @@ public class Reflector {
         }
     }
 
+    /**
+     * 获得 java.lang.reflect.Type 对应的类。
+     * @param src
+     * @return
+     */
     private Class<?> typeToClass(Type src) {
         Class<?> result = null;
+        // 普通类型，直接使用类
         if (src instanceof Class) {
             result = (Class<?>) src;
         } else if (src instanceof ParameterizedType) {
+            // 泛型类型，使用泛型
             result = (Class<?>) ((ParameterizedType) src).getRawType();
         } else if (src instanceof GenericArrayType) {
+            // 泛型数组，获得具体类
             Type componentType = ((GenericArrayType) src).getGenericComponentType();
+            // 创建一个数组
             if (componentType instanceof Class) {
                 result = Array.newInstance((Class<?>) componentType, 0).getClass();
             } else {
+                // 递归该方法，返回类
                 Class<?> componentClass = typeToClass(componentType);
                 result = Array.newInstance(componentClass, 0).getClass();
             }
@@ -251,7 +289,24 @@ public class Reflector {
                 // issue #379 - removed the check for final because JDK 1.5 allows
                 // modification of final fields through reflection (JSR-133). (JGB)
                 // pr #16 - final static can only be set by the classloader
+                //JAVA 反射机制中，Field的getModifiers()方法返回int类型值表示该字段的修饰符。
+                //其中，该修饰符是java.lang.reflect.Modifier的静态属性。
+                //对应表如下：
+                //
+                //PUBLIC: 1
+                //PRIVATE: 2
+                //PROTECTED: 4
+                //STATIC: 8
+                //FINAL: 16
+                //SYNCHRONIZED: 32
+                //VOLATILE: 64
+                //TRANSIENT: 128
+                //NATIVE: 256
+                //INTERFACE: 512
+                //ABSTRACT: 1024
+                //STRICT: 2048
                 int modifiers = field.getModifiers();
+                //只要不是final或者static，则添加到map
                 if (!(Modifier.isFinal(modifiers) && Modifier.isStatic(modifiers))) {
                     addSetField(field);
                 }
@@ -266,7 +321,9 @@ public class Reflector {
     }
 
     private void addSetField(Field field) {
+        //如果字段不以$开头，并且不是class和serialVersionUID
         if (isValidPropertyName(field.getName())) {
+            //存入set方法的map中
             setMethods.put(field.getName(), new SetFieldInvoker(field));
             Type fieldType = TypeParameterResolver.resolveFieldType(field, type);
             setTypes.put(field.getName(), typeToClass(fieldType));
@@ -281,6 +338,12 @@ public class Reflector {
         }
     }
 
+    /**
+     * 判断是否是有效的字段
+     * 不能以$开头| 不能是serialVersionUID | 不能是class
+     * @param name
+     * @return
+     */
     private boolean isValidPropertyName(String name) {
         return !(name.startsWith("$") || "serialVersionUID".equals(name) || "class".equals(name));
     }

@@ -15,5 +15,8 @@
  */
 /**
  * Simple single-thread pooled datasource
+ * 这种数据源的实现利用“池”的概念将 JDBC 连接对象组织起来，
+ * 避免了创建新的连接实例时所必需的初始化和认证时间。 这是一
+ * 种使得并发 Web 应用快速响应请求的流行处理方式。
  */
 package org.apache.ibatis.datasource.pooled;

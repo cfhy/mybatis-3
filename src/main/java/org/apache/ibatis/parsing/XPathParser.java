@@ -42,13 +42,34 @@ import org.xml.sax.SAXParseException;
 /**
  * @author Clinton Begin
  * @author Kazuki Shimizu
+ *
+ * 基于Java XPath 解析器，用于解析 XML 配置文件。
+ *
+ * XPathParser 提供了一系列的 eval* 方法，用于获得 Boolean、Short、Integer、Long、Float、Double、String、Node 类型的元素或节点的“值”。
  */
 public class XPathParser {
-
+  /**
+   * XML Document 对象，XML 被解析后，生成的 org.w3c.dom.Document 对象。
+   */
   private final Document document;
+  /**
+   * 是否校验 XML 。一般情况下，值为 true 。
+   */
   private boolean validation;
+  /**
+   * XML 实体解析器，默认情况下，对 XML 进行校验时，会基于 XML 文档开始位置指定的 DTD 文件或 XSD 文件。
+   *
+   * 在无网络的环境下，还会导致下载不下来，那么就会出现 XML 校验失败的情况。
+   * 所以，MyBatis 自定义了 EntityResolver 的实现，使用本地 DTD 文件，从而避免从下载网络。
+   */
   private EntityResolver entityResolver;
+  /**
+   * 变量 Properties 对象，用来替换需要动态配置的属性值。
+   */
   private Properties variables;
+  /**
+   * Java XPath 对象，用于查询 XML 中的节点和元素。
+   */
   private XPath xpath;
 
   public XPathParser(String xml) {
@@ -111,6 +132,13 @@ public class XPathParser {
     this.document = document;
   }
 
+  /**
+   * 构造 XPathParser 对象
+   * @param xml XML 文件地址
+   * @param validation 是否校验 XML
+   * @param variables 变量 Properties 对象
+   * @param entityResolver XML 实体解析器
+   */
   public XPathParser(String xml, boolean validation, Properties variables, EntityResolver entityResolver) {
     commonConstructor(validation, variables, entityResolver);
     this.document = createDocument(new InputSource(new StringReader(xml)));
@@ -140,6 +168,7 @@ public class XPathParser {
   }
 
   public String evalString(Object root, String expression) {
+    //获得值,如果result为动态值，则基于 variables 替换动态值
     String result = (String) evaluate(expression, root, XPathConstants.STRING);
     result = PropertyParser.parse(result, variables);
     return result;
@@ -197,8 +226,17 @@ public class XPathParser {
     return evalNodes(document, expression);
   }
 
+  /**
+   * 返回结果有 Node 对象和数组两种情况，根据方法参数 expression 需要获取的节点不同。
+   * 最终结果会将 Node 封装成 org.apache.ibatis.parsing.XNode 对象，主要为了动态值的替换。
+   * @param root
+   * @param expression
+   * @return
+   */
   public List<XNode> evalNodes(Object root, String expression) {
+    //封装成 XNode 数组
     List<XNode> xnodes = new ArrayList<>();
+    //获得 Node 数组
     NodeList nodes = (NodeList) evaluate(expression, root, XPathConstants.NODESET);
     for (int i = 0; i < nodes.getLength(); i++) {
       xnodes.add(new XNode(this, nodes.item(i), variables));
@@ -210,14 +248,30 @@ public class XPathParser {
     return evalNode(document, expression);
   }
 
+  /**
+   * eval 元素的方法，用于获得 Node 类型的节点的值。
+   * @param root
+   * @param expression
+   * @return
+   */
   public XNode evalNode(Object root, String expression) {
+    //获得 Node 对象
     Node node = (Node) evaluate(expression, root, XPathConstants.NODE);
     if (node == null) {
       return null;
     }
+    //封装成 XNode 对象
     return new XNode(this, node, variables);
   }
 
+  /**
+   * 获得指定元素或节点的值
+   *
+   * @param expression 表达式
+   * @param root 指定节点
+   * @param returnType 返回类型
+   * @return 值
+   */
   private Object evaluate(String expression, Object root, QName returnType) {
     try {
       return xpath.evaluate(expression, root, returnType);
@@ -226,6 +280,11 @@ public class XPathParser {
     }
   }
 
+  /**
+   * 将 XML 文件解析成 Document 对象。
+   * @param inputSource
+   * @return
+   */
   private Document createDocument(InputSource inputSource) {
     // important: this must only be called AFTER common constructor
     try {
@@ -261,6 +320,12 @@ public class XPathParser {
     }
   }
 
+  /**
+   * 初始化成员变量
+   * @param validation 是否校验 XML
+   * @param variables 变量 Properties 对象
+   * @param entityResolver XML 实体解析器
+   */
   private void commonConstructor(boolean validation, Properties variables, EntityResolver entityResolver) {
     this.validation = validation;
     this.entityResolver = entityResolver;

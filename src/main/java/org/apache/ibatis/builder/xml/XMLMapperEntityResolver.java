@@ -29,6 +29,9 @@ import org.xml.sax.SAXException;
  *
  * @author Clinton Begin
  * @author Eduardo Macarron
+ *
+ * 实现 EntityResolver 接口，MyBatis 自定义 EntityResolver 实现类，
+ * 用于加载本地的 mybatis-3-config.dtd 和 mybatis-3-mapper.dtd 这两个 DTD 文件。
  */
 public class XMLMapperEntityResolver implements EntityResolver {
 
@@ -36,8 +39,13 @@ public class XMLMapperEntityResolver implements EntityResolver {
   private static final String IBATIS_MAPPER_SYSTEM = "ibatis-3-mapper.dtd";
   private static final String MYBATIS_CONFIG_SYSTEM = "mybatis-3-config.dtd";
   private static final String MYBATIS_MAPPER_SYSTEM = "mybatis-3-mapper.dtd";
-
+  /**
+   * 本地 mybatis-config.dtd 文件
+   */
   private static final String MYBATIS_CONFIG_DTD = "org/apache/ibatis/builder/xml/mybatis-3-config.dtd";
+  /**
+   * 本地 mybatis-mapper.dtd 文件
+   */
   private static final String MYBATIS_MAPPER_DTD = "org/apache/ibatis/builder/xml/mybatis-3-mapper.dtd";
 
   /**
@@ -48,6 +56,10 @@ public class XMLMapperEntityResolver implements EntityResolver {
    * @return The InputSource for the DTD
    *
    * @throws org.xml.sax.SAXException If anything goes wrong
+   *
+   * <!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+   * publicId:-//mybatis.org//DTD Config 3.0//EN
+   * systemId:http://mybatis.org/dtd/mybatis-3-config.dtd
    */
   @Override
   public InputSource resolveEntity(String publicId, String systemId) throws SAXException {

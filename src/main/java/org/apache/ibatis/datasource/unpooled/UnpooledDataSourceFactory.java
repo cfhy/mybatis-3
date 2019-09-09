@@ -26,6 +26,7 @@ import org.apache.ibatis.reflection.SystemMetaObject;
 
 /**
  * @author Clinton Begin
+ * 非池化的 DataSourceFactory 实现类
  */
 public class UnpooledDataSourceFactory implements DataSourceFactory {
 
@@ -38,17 +39,22 @@ public class UnpooledDataSourceFactory implements DataSourceFactory {
     this.dataSource = new UnpooledDataSource();
   }
 
+  /**
+   * 把属性值设置到dataSource
+   * @param properties
+   */
   @Override
   public void setProperties(Properties properties) {
-    //这里使用if/else,也可以达到目的，但是硬编码扩展性不太好，如果换成其他名称就无法使用了。使用反射更优雅
     Properties driverProperties = new Properties();
     MetaObject metaDataSource = SystemMetaObject.forObject(dataSource);
     for (Object key : properties.keySet()) {
       String propertyName = (String) key;
       if (propertyName.startsWith(DRIVER_PROPERTY_PREFIX)) {
+        //如果是以driver.开头的，则放到driverProperties中
         String value = properties.getProperty(propertyName);
         driverProperties.setProperty(propertyName.substring(DRIVER_PROPERTY_PREFIX_LENGTH), value);
       } else if (metaDataSource.hasSetter(propertyName)) {
+        //调用dataSource的set方法设置相应的属性
         String value = (String) properties.get(propertyName);
         Object convertedValue = convertValue(metaDataSource, propertyName, value);
         metaDataSource.setValue(propertyName, convertedValue);

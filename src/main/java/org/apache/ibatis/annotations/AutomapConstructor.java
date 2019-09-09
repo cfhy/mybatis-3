@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
 
 /**
  * The marker annotation that indicate a constructor for automatic mapping.
- *
+ * 当有多个构造函数时，需要使用AutomapConstructor标记选用哪一个构造函数来自动映射。
  * @author Tim Chen
  * @since 3.4.3
  */
